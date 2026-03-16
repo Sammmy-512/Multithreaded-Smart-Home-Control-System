@@ -10,6 +10,7 @@ int main() {
     try {
         TCPServer server;
         server.start(8080);
+        std::cin.get();
     } catch (std::exception& e) {
         std::cout << e.what() << std::endl;
     }
