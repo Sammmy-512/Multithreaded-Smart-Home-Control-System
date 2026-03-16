@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
+#include <thread>
 #include "../utilities/SocketUtils.h"
 
 namespace seneca {
@@ -15,6 +16,7 @@ namespace seneca {
         TCPServer();
         ~TCPServer();
         void start(int port);
+        void accept_clients();
     };
 
 } // namespace seneca

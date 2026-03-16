@@ -31,4 +31,20 @@ namespace seneca {
         std::cout << "Server started on port " << port << std::endl;
     }
 
+    void TCPServer::accept_clients() {
+        std::cout << "Waiting for clients..." << std::endl;
+        while (true) {
+            socket_t client = accept(server_socket, nullptr, nullptr);
+            if (client == INVALID_SOC) {
+                report_error("Failed to accept client");
+                continue;
+            }
+            std::cout << "Client connected!" << std::endl;
+            std::thread([client]() {
+                std::cout << "Client handler started" << std::endl;
+                close_socket(client);
+            }).detach();
+        }
+    }
+
 } // namespace seneca
