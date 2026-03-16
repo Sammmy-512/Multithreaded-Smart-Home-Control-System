@@ -33,15 +33,17 @@ namespace seneca {
 
     void TCPServer::accept_clients() {
         std::cout << "Waiting for clients..." << std::endl;
+        int client_id = 0;
         while (true) {
             socket_t client = accept(server_socket, nullptr, nullptr);
             if (client == INVALID_SOC) {
                 report_error("Failed to accept client");
                 continue;
             }
+            client_id++; 
             std::cout << "Client connected!" << std::endl;
-            std::thread([client]() {
-                std::cout << "Client handler started" << std::endl;
+            std::thread([client, client_id]() {
+                std::cout << "Client " << client_id << " handler started" << std::endl;
                 close_socket(client);
             }).detach();
         }
