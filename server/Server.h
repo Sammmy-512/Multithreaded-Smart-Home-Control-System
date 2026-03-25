@@ -6,12 +6,24 @@
 #include <string>
 #include <stdexcept>
 #include <thread>
+#include <vector>
 #include "../utilities/SocketUtils.h"
 
 namespace seneca {
 
+    class ClientHandler {
+        socket_t client_socket;
+        int client_id;
+        std::vector<socket_t>& clients;
+    public:
+        ClientHandler(socket_t socket, int id, std::vector<socket_t>& clients);
+        void run();
+        void disconnect();
+    };
+
     class TCPServer {
         SOCKET server_socket;
+        std::vector<socket_t> clients;
     public:
         TCPServer();
         ~TCPServer();
