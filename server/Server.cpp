@@ -1,40 +1,23 @@
 // Server.cpp
 #include "Server.h"
 #include <algorithm>
+#include "../utilities/CommandParser.h"
 
 namespace seneca {
 
     // store the socket, id, and a reference to the client list
+    // each client gets their own handler when they connect
     ClientHandler::ClientHandler(socket_t socket, int id, std::vector<socket_t>& clients)
         : client_socket(socket), client_id(id), clients(clients) {}
 
-    // helper to parse commands like "GET /light/on" into device and action
-    // so "GET /light/on" gives us device="light" and action="on"
-    // and "GET /thermostat/set/22" gives device="thermostat" and action="set/22"
-    static bool parseCommand(const std::string& raw, std::string& device, std::string& action) {
-        // make sure it starts with GET
-        if (raw.substr(0, 4) != "GET ")
-            return false;
-
-        std::string path = raw.substr(4); // grab everything after "GET "
-        if (path.empty() || path[0] != '/')
-            return false;
-
-        path = path.substr(1); // remove the leading slash
-        size_t slash = path.find('/');
-        if (slash == std::string::npos)
-            return false;
-
-        device = path.substr(0, slash);
-        action = path.substr(slash + 1);
-        return true;
-    }
-
     // keeps listening for data from the client until they disconnect
+    // recv() blocks until data arrives, so this loop just waits and processes one command at a time
+    // when the client disconnects, recv() returns 0 and we break out and call disconnect()
     void ClientHandler::run() {
         char buffer[1024];
         std::cout << "Client " << client_id << " connected" << std::endl;
         while (true) {
+            // recv() waits for the client to send something and stores it in buffer
             int bytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
             if (bytes <= 0) {
                 // 0 means they disconnected cleanly, negative means something went wrong
@@ -44,7 +27,11 @@ namespace seneca {
             }
             buffer[bytes] = '\0';
             std::string raw(buffer);
+            // trim trailing newline/carriage return characters that clients may send
+            while (!raw.empty() && (raw.back() == '\n' || raw.back() == '\r'))
+                raw.pop_back();
 
+            // try to parse the command, send a response depending on whether it was valid
             std::string device, action;
             if (parseCommand(raw, device, action)) {
                 std::cout << "Client " << client_id << " -> device: " << device << ", action: " << action << std::endl;
@@ -60,7 +47,8 @@ namespace seneca {
         disconnect();
     }
 
-    // remove this client from the list and close the connection
+    // remove this client from the tracking list and close their socket
+    // called automatically when the client disconnects or an error occurs in run()
     void ClientHandler::disconnect() {
         clients.erase(std::remove(clients.begin(), clients.end(), client_socket), clients.end());
         close_socket(client_socket);
@@ -78,7 +66,9 @@ namespace seneca {
             close_socket(server_socket);
     }
 
-    // create the socket, bind it to the port, and start listening
+    // create the socket, bind it to the port, and start listening for incoming connections
+    // AF_INET means we're using IPv4, SOCK_STREAM means TCP
+    // INADDR_ANY means we accept connections on any network interface
     void TCPServer::start(int port) {
         server_socket = socket(AF_INET, SOCK_STREAM, 0);
         if (server_socket == INVALID_SOC)
@@ -86,8 +76,8 @@ namespace seneca {
 
         sockaddr_in addr{};
         addr.sin_family      = AF_INET;
-        addr.sin_port        = htons(port);
-        addr.sin_addr.s_addr = INADDR_ANY;
+        addr.sin_port        = htons(port);   // htons converts port to network byte order
+        addr.sin_addr.s_addr = INADDR_ANY;    // listen on all available network interfaces
 
         if (bind(server_socket, (sockaddr*)&addr, sizeof(addr)) < 0)
             throw std::runtime_error("Failed to bind");
@@ -99,11 +89,12 @@ namespace seneca {
     }
 
     // wait for clients to connect and spin up a new thread for each one
+    // detach() lets the thread run independently so the main loop can keep accepting new clients
     void TCPServer::accept_clients() {
         std::cout << "Waiting for clients..." << std::endl;
         int client_id = 0;
         while (true) {
-            // will add client address info later, using placeholders for now
+            // accept() blocks until a client connects, then returns their socket
             socket_t client = accept(server_socket, nullptr, nullptr);
             if (client == INVALID_SOC) {
                 report_error("Failed to accept client");
@@ -112,6 +103,7 @@ namespace seneca {
             client_id++;
             clients.push_back(client);
             std::cout << "Client " << client_id << " connected. Active clients: " << clients.size() << std::endl;
+            // each client runs in their own thread so multiple clients can be handled at the same time
             std::thread([client, client_id, &clients = clients]() {
                 ClientHandler handler(client, client_id, clients);
                 handler.run();
