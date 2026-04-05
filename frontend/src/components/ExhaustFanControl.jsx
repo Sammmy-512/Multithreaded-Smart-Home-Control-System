@@ -1,24 +1,20 @@
-// src/components/LightControl.jsx
 import React, { useState, useEffect } from 'react';
 import DeviceCard from './DeviceCard';
 import api from '../utils/api';
 
-const LightControl = () => {
-  const [status, setStatus] = useState('unknown');
+const ExhaustFanControl = ({ roomId }) => {
+  const [status, setStatus] = useState('off'); // on/off
+  const [speed, setSpeed] = useState(1); // 1-3
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const toggleLight = async (action) => {
+  const toggleFan = async (action) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await api.controlLight(action);
-      if (response.success) {
-        setStatus(action);
-      } else {
-        setError(response.error || 'Command failed');
-      }
+      const response = await api.controlExhaustFan({ roomId, action, speed });
+      if (response.success) setStatus(action === 'on' ? 'on' : 'off');
+      else setError(response.error || 'Command failed');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,34 +25,30 @@ const LightControl = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await api.getLightStatus();
+        const response = await api.getExhaustFanStatus({ roomId });
         if (response.success) {
-          const message = response.message.toLowerCase();
-          if (message.includes('on')) setStatus('on');
-          else if (message.includes('off')) setStatus('off');
+          setStatus(response.status.toLowerCase());
+          setSpeed(response.speed || 1);
         }
       } catch (err) {
-        console.error('Failed to fetch light status:', err);
+        console.error('Failed to fetch fan status:', err);
       }
     };
-
     fetchStatus();
-  }, []);
+  }, [roomId]);
 
   return (
     <DeviceCard
-      title="Room Light"
+      title="Exhaust Fan"
       status={status}
       loading={loading}
       error={error}
       className="bg-white/10 backdrop-blur-lg border border-white/10 text-white shadow-lg rounded-2xl"
     >
       <div className="space-y-4">
-
-        {/* Toggle Buttons */}
         <div className="flex gap-3">
           <button
-            onClick={() => toggleLight('on')}
+            onClick={() => toggleFan('on')}
             disabled={loading || status === 'on'}
             className={`flex-1 py-2 rounded-full font-medium text-white transition
               ${status === 'on'
@@ -66,9 +58,8 @@ const LightControl = () => {
           >
             Turn On
           </button>
-
           <button
-            onClick={() => toggleLight('off')}
+            onClick={() => toggleFan('off')}
             disabled={loading || status === 'off'}
             className={`flex-1 py-2 rounded-full font-medium text-white transition
               ${status === 'off'
@@ -80,19 +71,24 @@ const LightControl = () => {
           </button>
         </div>
 
-        {/* Status Display */}
-        {status !== 'unknown' && !loading && (
-          <div className="text-sm text-white">
-            Light is currently{' '}
-            <span className={`font-semibold ${status === 'on' ? 'text-amber-400' : 'text-gray-300'}`}>
-              {status.toUpperCase()}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 text-sm text-white">
+          <span>Speed:</span>
+          <input
+            type="number"
+            min="1"
+            max="3"
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+            className="w-12 px-2 py-1 rounded bg-white/10 text-white border border-white/20 focus:outline-none"
+          />
+        </div>
 
+        <div className="text-sm text-white">
+          Fan is {status.toUpperCase()}
+        </div>
       </div>
     </DeviceCard>
   );
 };
 
-export default LightControl;
+export default ExhaustFanControl;

@@ -1,19 +1,19 @@
-// src/components/LightControl.jsx
 import React, { useState, useEffect } from 'react';
 import DeviceCard from './DeviceCard';
 import api from '../utils/api';
 
-const LightControl = () => {
-  const [status, setStatus] = useState('unknown');
+const ShowerControl = ({ roomId }) => {
+  const [status, setStatus] = useState('unknown'); // 'on' or 'off'
+  const [temperature, setTemperature] = useState(38); // default temp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const toggleLight = async (action) => {
+  const toggleShower = async (action) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.controlLight(action);
+      const response = await api.controlShower({ roomId, action, temperature });
       if (response.success) {
         setStatus(action);
       } else {
@@ -26,37 +26,39 @@ const LightControl = () => {
     }
   };
 
+  const setShowerTemperature = (temp) => {
+    setTemperature(temp);
+  };
+
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await api.getLightStatus();
+        const response = await api.getShowerStatus({ roomId });
         if (response.success) {
-          const message = response.message.toLowerCase();
-          if (message.includes('on')) setStatus('on');
-          else if (message.includes('off')) setStatus('off');
+          setStatus(response.status.toLowerCase());
+          setTemperature(response.temperature || 38);
         }
       } catch (err) {
-        console.error('Failed to fetch light status:', err);
+        console.error('Failed to fetch shower status:', err);
       }
     };
 
     fetchStatus();
-  }, []);
+  }, [roomId]);
 
   return (
     <DeviceCard
-      title="Room Light"
+      title="Shower"
       status={status}
       loading={loading}
       error={error}
       className="bg-white/10 backdrop-blur-lg border border-white/10 text-white shadow-lg rounded-2xl"
     >
       <div className="space-y-4">
-
         {/* Toggle Buttons */}
         <div className="flex gap-3">
           <button
-            onClick={() => toggleLight('on')}
+            onClick={() => toggleShower('on')}
             disabled={loading || status === 'on'}
             className={`flex-1 py-2 rounded-full font-medium text-white transition
               ${status === 'on'
@@ -68,7 +70,7 @@ const LightControl = () => {
           </button>
 
           <button
-            onClick={() => toggleLight('off')}
+            onClick={() => toggleShower('off')}
             disabled={loading || status === 'off'}
             className={`flex-1 py-2 rounded-full font-medium text-white transition
               ${status === 'off'
@@ -80,19 +82,32 @@ const LightControl = () => {
           </button>
         </div>
 
+        {/* Temperature Control */}
+        <div className="flex items-center gap-2 text-sm text-white">
+          <span>Temp:</span>
+          <input
+            type="number"
+            min="20"
+            max="45"
+            value={temperature}
+            onChange={(e) => setShowerTemperature(Number(e.target.value))}
+            className="w-16 px-2 py-1 rounded bg-white/10 text-white border border-white/20 focus:outline-none"
+          />
+          <span>°C</span>
+        </div>
+
         {/* Status Display */}
         {status !== 'unknown' && !loading && (
           <div className="text-sm text-white">
-            Light is currently{' '}
+            Shower is currently{' '}
             <span className={`font-semibold ${status === 'on' ? 'text-amber-400' : 'text-gray-300'}`}>
               {status.toUpperCase()}
             </span>
           </div>
         )}
-
       </div>
     </DeviceCard>
   );
 };
 
-export default LightControl;
+export default ShowerControl;

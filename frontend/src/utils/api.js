@@ -36,83 +36,161 @@ class SmartHomeAPI {
     }
   }
 
-  /**
-   * Check health of bridge server and C++ backend
-   */
+  // ---------- General / Health ----------
   async checkHealth() {
     return this.request('/health');
   }
 
-  /**
-   * Get status of all devices
-   */
   async getAllDevices() {
     return this.request('/devices');
   }
 
-  /**
-   * Control light (on/off)
-   * @param {string} action - 'on' or 'off'
-   */
-  async controlLight(action) {
-    if (!['on', 'off'].includes(action)) {
-      throw new Error('Invalid action. Use "on" or "off"');
-    }
-    return this.request(`/devices/light/${action}`, {
-      method: 'POST',
-    });
-  }
-
-  /**
-   * Get light status
-   */
-  async getLightStatus() {
-    return this.request('/devices/light');
-  }
-
-  /**
-   * Set thermostat temperature
-   * @param {number} temperature - Temperature in Celsius (15-30)
-   */
-  async setThermostat(temperature) {
-    if (temperature < 15 || temperature > 30) {
-      throw new Error('Temperature must be between 15°C and 30°C');
-    }
-    return this.request('/devices/thermostat/set', {
-      method: 'POST',
-      body: JSON.stringify({ temperature }),
-    });
-  }
-
-  /**
-   * Get thermostat status
-   */
-  async getThermostatStatus() {
-    return this.request('/devices/thermostat');
-  }
-
-  /**
-   * Control security system
-   * @param {string} action - 'arm', 'disarm', or 'status'
-   */
-  async controlSecurity(action) {
-    if (!['arm', 'disarm', 'status'].includes(action)) {
-      throw new Error('Invalid action. Use "arm", "disarm", or "status"');
-    }
-    return this.request(`/devices/security/${action}`, {
-      method: 'POST',
-    });
-  }
-
-  /**
-   * Send custom command directly to C++ server
-   * @param {string} command - Command in format: GET /device/action
-   */
   async sendCommand(command) {
     return this.request('/command', {
       method: 'POST',
       body: JSON.stringify({ command }),
     });
+  }
+
+  // ---------- Lights ----------
+  async controlLight(action, room) {
+    if (!['on', 'off'].includes(action)) throw new Error('Invalid action. Use "on" or "off"');
+    return this.request(`/devices/light/${action}${room ? `?room=${room}` : ''}`, { method: 'POST' });
+  }
+
+  async getLightStatus(room) {
+    return this.request(`/devices/light${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Thermostat ----------
+  async setThermostat(temperature, room) {
+    if (temperature < 15 || temperature > 30) throw new Error('Temperature must be between 15°C and 30°C');
+    return this.request(`/devices/thermostat/set${room ? `?room=${room}` : ''}`, {
+      method: 'POST',
+      body: JSON.stringify({ temperature }),
+    });
+  }
+
+  async getThermostatStatus(room) {
+    return this.request(`/devices/thermostat${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Security ----------
+  async controlSecurity(action, room) {
+    if (!['arm', 'disarm', 'status'].includes(action))
+      throw new Error('Invalid action. Use "arm", "disarm", or "status"');
+    return this.request(`/devices/security/${action}${room ? `?room=${room}` : ''}`, { method: 'POST' });
+  }
+
+  async getSecurityStatus(room) {
+    return this.request(`/devices/security${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Smart Oven ----------
+  async controlOven(action, value, room) {
+    return this.request(`/devices/oven/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`, {
+      method: 'POST',
+    });
+  }
+
+  async getOvenStatus(room) {
+    return this.request(`/devices/oven${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Smart Fridge ----------
+  async controlFridge(action, value, room) {
+    return this.request(`/devices/fridge/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`, {
+      method: 'POST',
+    });
+  }
+
+  async getFridgeStatus(room) {
+    return this.request(`/devices/fridge${room ? `?room=${room}` : ''}`);
+  }
+
+
+async setFridgeTemperature(temp, room) {
+  return this.controlFridge('setTemperature', temp, room);
+}
+
+async setFridgeMode(mode, room) {
+  return this.controlFridge('setMode', mode, room);
+}
+
+  // ---------- Exhaust Fan ----------
+  async controlExhaustFan(action, room) {
+    return this.request(`/devices/exhaust/${action}${room ? `?room=${room}` : ''}`, { method: 'POST' });
+  }
+
+  async getExhaustStatus(room) {
+    return this.request(`/devices/exhaust${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Smart Shower ----------
+  async controlShower(action, temperature, room) {
+    return this.request(`/devices/shower/${action}${room ? `?room=${room}&temp=${temperature}` : `?temp=${temperature}`}`, {
+      method: 'POST',
+    });
+  }
+
+  async getShowerStatus(room) {
+    return this.request(`/devices/shower${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Smart Mirror ----------
+  async controlMirror(action, value, room) {
+    return this.request(`/devices/mirror/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`, {
+      method: 'POST',
+    });
+  }
+
+  async getMirrorStatus(room) {
+    return this.request(`/devices/mirror${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Smart Speaker ----------
+  async controlSpeaker(action, room) {
+    return this.request(`/devices/speaker/${action}${room ? `?room=${room}` : ''}`, { method: 'POST' });
+  }
+
+  async getSpeakerStatus(room) {
+    return this.request(`/devices/speaker${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- TV ----------
+  async controlTV(action, room) {
+    return this.request(`/devices/tv/${action}${room ? `?room=${room}` : ''}`, { method: 'POST' });
+  }
+
+  async getTVStatus(room) {
+    return this.request(`/devices/tv${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Blinds / Curtains ----------
+  async controlBlinds(action, room) {
+    return this.request(`/devices/blinds/${action}${room ? `?room=${room}` : ''}`, { method: 'POST' });
+  }
+
+  async getBlindsStatus(room) {
+    return this.request(`/devices/blinds${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Garage Door ----------
+  async controlGarageDoor(action, room) {
+    return this.request(`/devices/garage/${action}${room ? `?room=${room}` : ''}`, { method: 'POST' });
+  }
+
+  async getGarageStatus(room) {
+    return this.request(`/devices/garage${room ? `?room=${room}` : ''}`);
+  }
+
+  // ---------- Security Camera ----------
+  async controlCamera(action, room) {
+    return this.request(`/devices/camera/${action}${room ? `?room=${room}` : ''}`, { method: 'POST' });
+  }
+
+  async getCameraStatus(room) {
+    return this.request(`/devices/camera${room ? `?room=${room}` : ''}`);
   }
 }
 

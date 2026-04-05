@@ -1,12 +1,13 @@
-// src/pages/Dashboard.jsx
+// src/pages/Bathroom.jsx
 import React, { useState, useEffect } from "react";
-import LightControl from "../components/LightControl";
 import ThermostatControl from "../components/ThermostatControl";
-import SecurityControl from "../components/SecurityControl";
+import ShowerControl from "../components/ShowerControl";
+import MirrorControl from "../components/MirrorControl";
+import ExhaustFanControl from "../components/ExhaustFanControl";
 import ActivityLog from "../components/ActivityLog";
 import Navbar from "../components/Navbar";
 
-const Dashboard = () => {
+const Bathroom = () => {
   const [serverStatus, setServerStatus] = useState({ bridge: "checking", cppServer: "checking" });
   const [showCommandInput, setShowCommandInput] = useState(false);
   const [customCommand, setCustomCommand] = useState("");
@@ -44,27 +45,29 @@ const Dashboard = () => {
       {/* Background image */}
       <div
         className="absolute inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: `url('/assets/homeImg.png')` }}
+        style={{ backgroundImage: `url('/assets/bathroom.jpeg')` }}
       />
 
-      {/* Lighter dark overlay */}
+      {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/60 z-0"></div>
 
       {/* Main content */}
       <div className="relative z-10 p-6">
         <Navbar />
 
-        {/* Add top padding so content isn't hidden behind navbar */}
         <main className="pt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
           {/* Thermostat Control */}
           <ThermostatControl />
 
-          {/* Light Control */}
-          <LightControl />
+          {/* Shower */}
+          <ShowerControl />
 
-          {/* Security Control */}
-          <SecurityControl />
+          {/* Mirror */}
+          <MirrorControl />
+
+          {/* Exhaust Fan */}
+          <ExhaustFanControl />
 
           {/* Activity Log */}
           <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 text-white">
@@ -114,4 +117,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Bathroom;

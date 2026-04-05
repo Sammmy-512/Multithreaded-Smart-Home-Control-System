@@ -1,12 +1,11 @@
-// bridge-server/server.js
 const express = require('express');
 const net = require('net');
 const cors = require('cors');
 
 const app = express();
-const PORT = 5000;
+const PORT = 5001;
 
-// C++ Server Configuration (matches your main_server.cpp)
+// C++ Server Configuration
 const CPP_SERVER_HOST = '127.0.0.1';
 const CPP_SERVER_PORT = 8080;
 
@@ -21,7 +20,7 @@ app.use((req, res, next) => {
 });
 
 /**
- * TCP Bridge Client - Communicates with your C++ server
+ * TCP Bridge Client - Communicates with the C++ server
  */
 class TCPBridge {
   constructor(host, port) {
@@ -29,11 +28,6 @@ class TCPBridge {
     this.port = port;
   }
 
-  /**
-   * Send command to C++ server and receive response
-   * Your C++ server expects: GET /device/action
-   * Your C++ server responds: OK: device -> action\n OR ERROR: ...
-   */
   async sendCommand(command) {
     return new Promise((resolve, reject) => {
       const client = new net.Socket();
@@ -47,17 +41,14 @@ class TCPBridge {
       client.connect(this.port, this.host, () => {
         console.log(`✓ Connected to C++ server`);
         console.log(`→ Sending: ${command}`);
-        // Your C++ server doesn't require \n, but it's safe to include
         client.write(command + '\n');
       });
 
       client.on('data', (data) => {
         responseData += data.toString();
-        
-        // Your C++ server sends response with \n at the end
         if (responseData.includes('\n')) {
           clearTimeout(timeout);
-          client.destroy(); // Close connection after receiving response
+          client.destroy();
         }
       });
 
@@ -68,13 +59,13 @@ class TCPBridge {
         if (response.startsWith('OK:')) {
           resolve({
             success: true,
-            message: response.substring(4).trim(), // Remove "OK: " prefix
+            message: response.substring(3).trim(), 
             raw: response
           });
         } else if (response.startsWith('ERROR:')) {
           resolve({
             success: false,
-            error: response.substring(7).trim(), // Remove "ERROR: " prefix
+            error: response.substring(6).trim(), 
             raw: response
           });
         } else {
@@ -89,7 +80,6 @@ class TCPBridge {
       client.on('error', (err) => {
         clearTimeout(timeout);
         console.error('✗ TCP Error:', err.message);
-        
         if (err.code === 'ECONNREFUSED') {
           reject(new Error('C++ server is not running. Please start ./server_app first.'));
         } else {
@@ -99,13 +89,9 @@ class TCPBridge {
     });
   }
 
-  /**
-   * Check if C++ server is reachable
-   */
   async ping() {
     return new Promise((resolve) => {
       const client = new net.Socket();
-      
       const timeout = setTimeout(() => {
         client.destroy();
         resolve(false);
@@ -127,16 +113,13 @@ class TCPBridge {
 
 const tcpBridge = new TCPBridge(CPP_SERVER_HOST, CPP_SERVER_PORT);
 
-// ============================================
-// REST API ROUTES
-// ============================================
+// --- REST API ROUTES ---
 
 /**
  * Health check - verifies bridge server AND C++ backend
  */
 app.get('/api/health', async (req, res) => {
   const cppServerOnline = await tcpBridge.ping();
-  
   res.json({
     bridge: 'online',
     cppServer: cppServerOnline ? 'online' : 'offline',
@@ -145,202 +128,108 @@ app.get('/api/health', async (req, res) => {
 });
 
 /**
- * Get all devices status
+ * Get overall status of ALL devices
  */
 app.get('/api/devices', async (req, res) => {
   try {
     const response = await tcpBridge.sendCommand('GET /devices/status');
     res.json(response);
   } catch (error) {
-    res.status(503).json({
-      success: false,
-      error: error.message
-    });
+    res.status(503).json({ success: false, error: error.message });
   }
 });
 
 /**
- * Control light - GET /light/on or GET /light/off
+ * Generic Device Status Route
+ * Usage: GET /api/devices/light or GET /api/devices/thermostat
  */
-app.post('/api/devices/light/:action', async (req, res) => {
+app.get('/api/devices/:device', async (req, res) => {
   try {
-    const { action } = req.params;
-    
-    if (!['on', 'off'].includes(action)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid action. Use "on" or "off"'
-      });
-    }
-
-    const command = `GET /light/${action}`;
-    const response = await tcpBridge.sendCommand(command);
-    
-    res.json({
-      device: 'light',
-      action,
-      ...response
-    });
-  } catch (error) {
-    res.status(503).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-/**
- * Get light status
- */
-app.get('/api/devices/light', async (req, res) => {
-  try {
-    const response = await tcpBridge.sendCommand('GET /light/status');
+    const { device } = req.params;
+    const response = await tcpBridge.sendCommand(`GET /${device}/status`);
     res.json(response);
   } catch (error) {
-    res.status(503).json({
-      success: false,
-      error: error.message
-    });
+    res.status(503).json({ success: false, error: error.message });
   }
 });
 
 /**
- * Set thermostat temperature - GET /thermostat/set/22
+ * Generic Device Control Route
+ * Handles all actions (on, off, set, dim, etc.) for any device.
+ * URL: POST /api/devices/:device/:action
+ * Example Body: { "value": 22 }
  */
-app.post('/api/devices/thermostat/set', async (req, res) => {
+app.post('/api/devices/:device/:action', async (req, res) => {
   try {
-    const { temperature } = req.body;
-    
-    if (!temperature || typeof temperature !== 'number') {
-      return res.status(400).json({
-        success: false,
-        error: 'Temperature (number) is required'
-      });
+    const { device, action } = req.params;
+    const { value } = req.body;
+
+    // Constructs command: GET /device/action or GET /device/action/value
+    let command = `GET /${device}/${action}`;
+    if (value !== undefined) {
+      command += `/${value}`;
     }
 
-    if (temperature < 15 || temperature > 30) {
-      return res.status(400).json({
-        success: false,
-        error: 'Temperature must be between 15°C and 30°C'
-      });
-    }
-
-    const command = `GET /thermostat/set/${temperature}`;
     const response = await tcpBridge.sendCommand(command);
     
     res.json({
-      device: 'thermostat',
-      temperature,
-      ...response
-    });
-  } catch (error) {
-    res.status(503).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-/**
- * Get thermostat status
- */
-app.get('/api/devices/thermostat', async (req, res) => {
-  try {
-    const response = await tcpBridge.sendCommand('GET /thermostat/status');
-    res.json(response);
-  } catch (error) {
-    res.status(503).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-/**
- * Control security system
- */
-app.post('/api/devices/security/:action', async (req, res) => {
-  try {
-    const { action } = req.params;
-    
-    if (!['arm', 'disarm', 'status'].includes(action)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid action. Use "arm", "disarm", or "status"'
-      });
-    }
-
-    const command = `GET /security/${action}`;
-    const response = await tcpBridge.sendCommand(command);
-    
-    res.json({
-      device: 'security',
+      device,
       action,
+      sentValue: value || null,
       ...response
     });
   } catch (error) {
-    res.status(503).json({
-      success: false,
-      error: error.message
-    });
+    res.status(503).json({ success: false, error: error.message });
   }
 });
 
 /**
- * Generic command endpoint - send any command to C++ server
+ * Direct Command Endpoint (For debugging)
  */
 app.post('/api/command', async (req, res) => {
   try {
     const { command } = req.body;
-    
-    if (!command || typeof command !== 'string') {
-      return res.status(400).json({
-        success: false,
-        error: 'Command (string) is required'
-      });
-    }
-
+    if (!command) return res.status(400).json({ error: 'Command required' });
     const response = await tcpBridge.sendCommand(command);
     res.json(response);
   } catch (error) {
-    res.status(503).json({
-      success: false,
-      error: error.message
-    });
+    res.status(503).json({ success: false, error: error.message });
   }
 });
 
-/**
- * Error handling middleware
- */
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({
-    success: false,
-    error: 'Internal server error'
-  });
+  res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
-// ============================================
-// START SERVER
-// ============================================
+// Start Server
+const server = app.listen(PORT, async () => {
+  console.log(`
+Smart Home Bridge Server:
+  Bridge Server:    http://localhost:${PORT} 
+  C++ Backend:      ${CPP_SERVER_HOST}:${CPP_SERVER_PORT} 
+  `);
 
-app.listen(PORT, () => {
-    console.log(`Bridge server running on http://localhost:${PORT}`);
-  });
-  
-  (async () => {
-    try {
-      const isOnline = await tcpBridge.ping();
-      if (isOnline) console.log('✅ C++ server is reachable');
-      else console.log('⚠️  C++ server NOT reachable');
-    } catch (err) {
-      console.error('⚠️  Error checking C++ server:', err.message);
-    }
-  })();
+  const isOnline = await tcpBridge.ping();
+  if (isOnline) {
+    console.log('C++ server is reachable');
+  } else {
+    console.log('WARNING: C++ server is NOT reachable. Start ./server_app');
+  }
+});
 
 // Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n\n👋 Shutting down bridge server...');
-  process.exit(0);
-});
+const shutdown = () => {
+  console.log('\nShutting down bridge server...');
+  server.close(() => {
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
+// Prevent crashes from unhandled errors
+process.on('uncaughtException', (err) => console.error('Uncaught Exception:', err));
+process.on('unhandledRejection', (reason) => console.error('Unhandled Rejection:', reason));

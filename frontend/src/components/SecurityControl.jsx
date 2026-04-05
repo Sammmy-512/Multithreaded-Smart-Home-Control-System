@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import DeviceCard from './DeviceCard';
 import api from '../utils/api';
-import './Controls.css';
 
 const SecurityControl = () => {
   const [status, setStatus] = useState('unknown');
@@ -15,61 +14,73 @@ const SecurityControl = () => {
 
     try {
       const response = await api.controlSecurity(action);
-      
       if (response.success) {
         if (action === 'arm') setStatus('armed');
         else if (action === 'disarm') setStatus('disarmed');
-        console.log('✓ Security control success:', response.message);
       } else {
         setError(response.error || 'Command failed');
       }
     } catch (err) {
       setError(err.message);
-      console.error('✗ Security control error:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const getStatusMessage = () => {
+    if (status === 'armed') return 'Your home is protected';
+    if (status === 'disarmed') return 'Security system is off';
+    return 'Status unknown';
+  };
+
   return (
     <DeviceCard
       title="Security System"
-      icon="🔒"
       status={status}
       loading={loading}
       error={error}
+      className="bg-white/10 backdrop-blur-lg border border-white/10 text-white shadow-lg rounded-2xl"
     >
-      <div className="security-status">
-        <div className={`security-indicator status-${status}`}>
-          {status === 'armed' && <span className="pulse"></span>}
-          <span className="security-icon">
-            {status === 'armed' ? '🔐' : status === 'disarmed' ? '🔓' : '❓'}
-          </span>
-        </div>
-        <p className="security-message">
-          {status === 'armed' && 'Your home is protected'}
-          {status === 'disarmed' && 'Security system is off'}
-          {status === 'unknown' && 'Status unknown'}
-        </p>
-      </div>
+      <div className="space-y-4">
 
-      <div className="control-buttons">
-        <button
-          onClick={() => controlSecurity('arm')}
-          disabled={loading || status === 'armed'}
-          className={`control-btn btn-danger ${status === 'armed' ? 'active' : ''}`}
-        >
-          <span className="btn-icon">🔐</span>
-          Arm System
-        </button>
-        <button
-          onClick={() => controlSecurity('disarm')}
-          disabled={loading || status === 'disarmed'}
-          className={`control-btn btn-secondary ${status === 'disarmed' ? 'active' : ''}`}
-        >
-          <span className="btn-icon">🔓</span>
-          Disarm System
-        </button>
+        {/* Status Indicator */}
+        <div className="flex flex-col items-center justify-center">
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl
+            ${status !== 'unknown' ? 'bg-white/10 text-white' : 'bg-white/20 text-gray-300'}`}>
+            {status === 'armed' ? '🔐' : status === 'disarmed' ? '🔓' : '❓'}
+          </div>
+          <p className="text-sm text-white mt-2 text-center">
+            {getStatusMessage()}
+          </p>
+        </div>
+
+        {/* Control Buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => controlSecurity('arm')}
+            disabled={loading || status === 'armed'}
+            className={`flex-1 py-2 rounded-full font-medium text-white transition
+              ${status === 'armed'
+                ? "bg-white text-gray-900 font-semibold shadow-inner"
+                : "bg-white/10 hover:bg-white/20 border border-white/20"
+              }`}
+          >
+            Arm
+          </button>
+
+          <button
+            onClick={() => controlSecurity('disarm')}
+            disabled={loading || status === 'disarmed'}
+            className={`flex-1 py-2 rounded-full font-medium text-white transition
+              ${status === 'disarmed'
+                ? "bg-white text-gray-900 font-semibold shadow-inner"
+                : "bg-white/10 hover:bg-white/20 border border-white/20"
+              }`}
+          >
+            Disarm
+          </button>
+        </div>
+
       </div>
     </DeviceCard>
   );

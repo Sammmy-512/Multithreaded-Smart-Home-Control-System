@@ -1,5 +1,0 @@
-[
-    { "username": "home1", "password": "password1", "homeId": 1 },
-    { "username": "home2", "password": "password2", "homeId": 2 },
-    { "username": "home3", "password": "password3", "homeId": 1 }
-  ]

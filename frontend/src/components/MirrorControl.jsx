@@ -1,21 +1,21 @@
-// src/components/LightControl.jsx
 import React, { useState, useEffect } from 'react';
 import DeviceCard from './DeviceCard';
 import api from '../utils/api';
 
-const LightControl = () => {
-  const [status, setStatus] = useState('unknown');
+const MirrorControl = ({ roomId }) => {
+  const [status, setStatus] = useState('offline'); // online/offline
+  const [brightness, setBrightness] = useState(50); // 0-100
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const toggleLight = async (action) => {
+  const toggleMirror = async (action) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.controlLight(action);
+      const response = await api.controlMirror({ roomId, action, brightness });
       if (response.success) {
-        setStatus(action);
+        setStatus(action === 'on' ? 'online' : 'offline');
       } else {
         setError(response.error || 'Command failed');
       }
@@ -29,37 +29,33 @@ const LightControl = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await api.getLightStatus();
+        const response = await api.getMirrorStatus({ roomId });
         if (response.success) {
-          const message = response.message.toLowerCase();
-          if (message.includes('on')) setStatus('on');
-          else if (message.includes('off')) setStatus('off');
+          setStatus(response.status.toLowerCase());
+          setBrightness(response.brightness || 50);
         }
       } catch (err) {
-        console.error('Failed to fetch light status:', err);
+        console.error('Failed to fetch mirror status:', err);
       }
     };
-
     fetchStatus();
-  }, []);
+  }, [roomId]);
 
   return (
     <DeviceCard
-      title="Room Light"
+      title="Mirror"
       status={status}
       loading={loading}
       error={error}
       className="bg-white/10 backdrop-blur-lg border border-white/10 text-white shadow-lg rounded-2xl"
     >
       <div className="space-y-4">
-
-        {/* Toggle Buttons */}
         <div className="flex gap-3">
           <button
-            onClick={() => toggleLight('on')}
-            disabled={loading || status === 'on'}
+            onClick={() => toggleMirror('on')}
+            disabled={loading || status === 'online'}
             className={`flex-1 py-2 rounded-full font-medium text-white transition
-              ${status === 'on'
+              ${status === 'online'
                 ? "bg-white text-gray-900 font-semibold shadow-inner"
                 : "bg-white/10 hover:bg-white/20 border border-white/20"
               }`}
@@ -68,10 +64,10 @@ const LightControl = () => {
           </button>
 
           <button
-            onClick={() => toggleLight('off')}
-            disabled={loading || status === 'off'}
+            onClick={() => toggleMirror('off')}
+            disabled={loading || status === 'offline'}
             className={`flex-1 py-2 rounded-full font-medium text-white transition
-              ${status === 'off'
+              ${status === 'offline'
                 ? "bg-white text-gray-900 font-semibold shadow-inner"
                 : "bg-white/10 hover:bg-white/20 border border-white/20"
               }`}
@@ -80,19 +76,21 @@ const LightControl = () => {
           </button>
         </div>
 
-        {/* Status Display */}
-        {status !== 'unknown' && !loading && (
-          <div className="text-sm text-white">
-            Light is currently{' '}
-            <span className={`font-semibold ${status === 'on' ? 'text-amber-400' : 'text-gray-300'}`}>
-              {status.toUpperCase()}
-            </span>
-          </div>
-        )}
-
+        <div className="flex items-center gap-2 text-sm text-white">
+          <span>Brightness:</span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={brightness}
+            onChange={(e) => setBrightness(Number(e.target.value))}
+            className="flex-1 accent-white/80"
+          />
+          <span>{brightness}%</span>
+        </div>
       </div>
     </DeviceCard>
   );
 };
 
-export default LightControl;
+export default MirrorControl;
