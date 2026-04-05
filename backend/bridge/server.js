@@ -55,25 +55,13 @@ class TCPBridge {
       client.on('close', () => {
         const response = responseData.trim();
         console.log(`← Received: ${response}`);
-        
+
         if (response.startsWith('OK:')) {
-          resolve({
-            success: true,
-            message: response.substring(3).trim(), 
-            raw: response
-          });
+          resolve({ success: true, message: response.substring(3).trim(), raw: response });
         } else if (response.startsWith('ERROR:')) {
-          resolve({
-            success: false,
-            error: response.substring(6).trim(), 
-            raw: response
-          });
+          resolve({ success: false, error: response.substring(6).trim(), raw: response });
         } else {
-          resolve({
-            success: true,
-            message: response,
-            raw: response
-          });
+          resolve({ success: true, message: response, raw: response });
         }
       });
 
@@ -115,9 +103,7 @@ const tcpBridge = new TCPBridge(CPP_SERVER_HOST, CPP_SERVER_PORT);
 
 // --- REST API ROUTES ---
 
-/**
- * Health check - verifies bridge server AND C++ backend
- */
+// Health check
 app.get('/api/health', async (req, res) => {
   const cppServerOnline = await tcpBridge.ping();
   res.json({
@@ -127,9 +113,7 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-/**
- * Get overall status of ALL devices
- */
+// Get overall status of all devices
 app.get('/api/devices', async (req, res) => {
   try {
     const response = await tcpBridge.sendCommand('GET /devices/status');
@@ -139,43 +123,37 @@ app.get('/api/devices', async (req, res) => {
   }
 });
 
-/**
- * Generic Device Status Route
- * Usage: GET /api/devices/light or GET /api/devices/thermostat
- */
+// Generic Device Status (supports room)
 app.get('/api/devices/:device', async (req, res) => {
   try {
     const { device } = req.params;
-    const response = await tcpBridge.sendCommand(`GET /${device}/status`);
+    const { room } = req.query; // room-specific
+    let command = `GET /${device}/status`;
+    if (room) command += `?room=${room}`;
+    const response = await tcpBridge.sendCommand(command);
     res.json(response);
   } catch (error) {
     res.status(503).json({ success: false, error: error.message });
   }
 });
 
-/**
- * Generic Device Control Route
- * Handles all actions (on, off, set, dim, etc.) for any device.
- * URL: POST /api/devices/:device/:action
- * Example Body: { "value": 22 }
- */
+// Generic Device Control (supports room & value)
 app.post('/api/devices/:device/:action', async (req, res) => {
   try {
     const { device, action } = req.params;
-    const { value } = req.body;
+    const { value, room } = req.body; // value for thermostat/fridge, room optional
 
-    // Constructs command: GET /device/action or GET /device/action/value
     let command = `GET /${device}/${action}`;
-    if (value !== undefined) {
-      command += `/${value}`;
-    }
+    if (value !== undefined) command += `/${value}`;
+    if (room) command += `?room=${room}`;
 
     const response = await tcpBridge.sendCommand(command);
-    
+
     res.json({
       device,
       action,
       sentValue: value || null,
+      room: room || null,
       ...response
     });
   } catch (error) {
@@ -183,9 +161,7 @@ app.post('/api/devices/:device/:action', async (req, res) => {
   }
 });
 
-/**
- * Direct Command Endpoint (For debugging)
- */
+// Custom raw command
 app.post('/api/command', async (req, res) => {
   try {
     const { command } = req.body;
@@ -203,7 +179,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
-// Start Server
+// Start server
 const server = app.listen(PORT, async () => {
   console.log(`
 Smart Home Bridge Server:
@@ -222,14 +198,10 @@ Smart Home Bridge Server:
 // Graceful shutdown
 const shutdown = () => {
   console.log('\nShutting down bridge server...');
-  server.close(() => {
-    process.exit(0);
-  });
+  server.close(() => process.exit(0));
 };
 
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
-
-// Prevent crashes from unhandled errors
 process.on('uncaughtException', (err) => console.error('Uncaught Exception:', err));
 process.on('unhandledRejection', (reason) => console.error('Unhandled Rejection:', reason));

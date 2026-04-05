@@ -22,11 +22,7 @@ class SmartHomeAPI {
 
       const data = await response.json();
 
-      // Handle unsuccessful responses from C++ server
-      if (!data.success && data.error) {
-        throw new Error(data.error);
-      }
-
+      if (!data.success && data.error) throw new Error(data.error);
       return data;
     } catch (error) {
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -88,9 +84,10 @@ class SmartHomeAPI {
 
   // ---------- Smart Oven ----------
   async controlOven(action, value, room) {
-    return this.request(`/devices/oven/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`, {
-      method: 'POST',
-    });
+    return this.request(
+      `/devices/oven/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`,
+      { method: 'POST' }
+    );
   }
 
   async getOvenStatus(room) {
@@ -99,23 +96,23 @@ class SmartHomeAPI {
 
   // ---------- Smart Fridge ----------
   async controlFridge(action, value, room) {
-    return this.request(`/devices/fridge/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`, {
-      method: 'POST',
-    });
+    return this.request(
+      `/devices/fridge/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`,
+      { method: 'POST' }
+    );
   }
 
   async getFridgeStatus(room) {
     return this.request(`/devices/fridge${room ? `?room=${room}` : ''}`);
   }
 
+  async setFridgeTemperature(temp, room) {
+    return this.controlFridge('setTemperature', temp, room);
+  }
 
-async setFridgeTemperature(temp, room) {
-  return this.controlFridge('setTemperature', temp, room);
-}
-
-async setFridgeMode(mode, room) {
-  return this.controlFridge('setMode', mode, room);
-}
+  async setFridgeMode(mode, room) {
+    return this.controlFridge('setMode', mode, room);
+  }
 
   // ---------- Exhaust Fan ----------
   async controlExhaustFan(action, room) {
@@ -128,9 +125,10 @@ async setFridgeMode(mode, room) {
 
   // ---------- Smart Shower ----------
   async controlShower(action, temperature, room) {
-    return this.request(`/devices/shower/${action}${room ? `?room=${room}&temp=${temperature}` : `?temp=${temperature}`}`, {
-      method: 'POST',
-    });
+    return this.request(
+      `/devices/shower/${action}${room ? `?room=${room}&temp=${temperature}` : `?temp=${temperature}`}`,
+      { method: 'POST' }
+    );
   }
 
   async getShowerStatus(room) {
@@ -139,9 +137,10 @@ async setFridgeMode(mode, room) {
 
   // ---------- Smart Mirror ----------
   async controlMirror(action, value, room) {
-    return this.request(`/devices/mirror/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`, {
-      method: 'POST',
-    });
+    return this.request(
+      `/devices/mirror/${action}${room ? `?room=${room}&value=${value}` : `?value=${value}`}`,
+      { method: 'POST' }
+    );
   }
 
   async getMirrorStatus(room) {

@@ -4,7 +4,8 @@ import ThermostatControl from "../components/ThermostatControl";
 import ShowerControl from "../components/ShowerControl";
 import MirrorControl from "../components/MirrorControl";
 import ExhaustFanControl from "../components/ExhaustFanControl";
-import ActivityLog from "../components/ActivityLog";
+import LightControl from "../components/LightControl";
+import SecurityControl from "../components/SecurityControl";
 import Navbar from "../components/Navbar";
 
 const Bathroom = () => {
@@ -60,6 +61,12 @@ const Bathroom = () => {
           {/* Thermostat Control */}
           <ThermostatControl />
 
+          {/* Security Control */}
+          <SecurityControl />
+
+          {/* Light Control */}
+          <LightControl roomId="bathroom" />
+
           {/* Shower */}
           <ShowerControl />
 
@@ -68,12 +75,6 @@ const Bathroom = () => {
 
           {/* Exhaust Fan */}
           <ExhaustFanControl />
-
-          {/* Activity Log */}
-          <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 text-white">
-            <h3 className="text-lg font-semibold mb-3">Activity Log</h3>
-            <ActivityLog />
-          </div>
 
           {/* System Terminal */}
           <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 md:col-span-3 text-white">

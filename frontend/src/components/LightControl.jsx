@@ -3,22 +3,18 @@ import React, { useState, useEffect } from 'react';
 import DeviceCard from './DeviceCard';
 import api from '../utils/api';
 
-const LightControl = () => {
-  const [status, setStatus] = useState('unknown');
+const LightControl = ({ roomId }) => {
+  const [status, setStatus] = useState('unknown'); // on/off/unknown
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const toggleLight = async (action) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await api.controlLight(action);
-      if (response.success) {
-        setStatus(action);
-      } else {
-        setError(response.error || 'Command failed');
-      }
+      const response = await api.controlLight(action, roomId);
+      if (response.success) setStatus(action);
+      else setError(response.error || 'Command failed');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,23 +25,25 @@ const LightControl = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await api.getLightStatus();
+        const response = await api.getLightStatus(roomId);
         if (response.success) {
-          const message = response.message.toLowerCase();
-          if (message.includes('on')) setStatus('on');
-          else if (message.includes('off')) setStatus('off');
+          const msg = response.message.toLowerCase();
+          if (msg.includes('on')) setStatus('on');
+          else if (msg.includes('off')) setStatus('off');
+          else setStatus('unknown');
         }
       } catch (err) {
         console.error('Failed to fetch light status:', err);
+        setStatus('unknown');
       }
     };
 
     fetchStatus();
-  }, []);
+  }, [roomId]);
 
   return (
     <DeviceCard
-      title="Room Light"
+      title="Light"
       status={status}
       loading={loading}
       error={error}

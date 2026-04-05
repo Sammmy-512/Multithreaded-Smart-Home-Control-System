@@ -3,8 +3,10 @@ import React, { useState, useEffect } from "react";
 import LightControl from "../components/LightControl";
 import ThermostatControl from "../components/ThermostatControl";
 import SecurityControl from "../components/SecurityControl";
-import ActivityLog from "../components/ActivityLog";
 import Navbar from "../components/Navbar";
+import TVControl from "../components/TVControl";
+import BlindsCurtainControl from "../components/BlindsCurtainControl";
+import SecurityCameraControl from "../components/SecurityCameraControl";
 
 const Dashboard = () => {
   const [serverStatus, setServerStatus] = useState({ bridge: "checking", cppServer: "checking" });
@@ -60,17 +62,18 @@ const Dashboard = () => {
           {/* Thermostat Control */}
           <ThermostatControl />
 
-          {/* Light Control */}
-          <LightControl />
-
           {/* Security Control */}
           <SecurityControl />
 
-          {/* Activity Log */}
-          <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 text-white">
-            <h3 className="text-lg font-semibold mb-3">Activity Log</h3>
-            <ActivityLog />
-          </div>
+          {/* Light Control */}
+          <LightControl roomId="livingRoom" />
+
+          <BlindsCurtainControl />
+
+          <SecurityCameraControl />
+
+          {/* <TVControl /> */}
+
 
           {/* System Terminal */}
           <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 md:col-span-3 text-white">

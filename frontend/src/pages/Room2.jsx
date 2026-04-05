@@ -4,8 +4,8 @@ import LightControl from "../components/LightControl";
 import ThermostatControl from "../components/ThermostatControl";
 import Speaker from "../components/Speaker";
 import BlindsCurtainControl from "../components/BlindsCurtainControl";
-import ActivityLog from "../components/ActivityLog";
 import Navbar from "../components/Navbar";
+import SecurityControl from "../components/SecurityControl";
 
 const Room2 = () => {
   const [serverStatus, setServerStatus] = useState({ bridge: "checking", cppServer: "checking" });
@@ -59,24 +59,19 @@ const Room2 = () => {
           
           {/* Thermostat Control */}
           <ThermostatControl />
+
+          {/* Security Control */}
+          <SecurityControl />
           
           {/* Light Control */}
-          <LightControl />
-
-          
+          <LightControl roomId="room2" />
 
           {/*  Speaker */}
           <Speaker />
 
           {/* Blinds & Curtains */}
           <BlindsCurtainControl />
-
-          {/* Activity Log */}
-          <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 text-white">
-            <h3 className="text-lg font-semibold mb-3">Activity Log</h3>
-            <ActivityLog />
-          </div>
-
+          
           {/* System Terminal */}
           <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 md:col-span-3 text-white">
             <button
