@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <thread>
 #include <vector>
+#include <mutex>
+#include "../devices/DeviceManager.h"
 #include "../utilities/SocketUtils.h"
 
 namespace seneca {
@@ -15,15 +17,21 @@ namespace seneca {
         socket_t client_socket;
         int client_id;
         std::vector<socket_t>& clients;
+        std::mutex& clients_mutex;
+        DeviceManager& deviceManager;
     public:
-        ClientHandler(socket_t socket, int id, std::vector<socket_t>& clients);
+        ClientHandler(socket_t socket, int id, std::vector<socket_t>& clients,
+            std::mutex& clients_mutex, DeviceManager& deviceManager);
         void run();
         void disconnect();
+        
     };
 
     class TCPServer {
         SOCKET server_socket;
         std::vector<socket_t> clients;
+        std::mutex clients_mutex;
+        DeviceManager deviceManager;
     public:
         TCPServer();
         ~TCPServer();

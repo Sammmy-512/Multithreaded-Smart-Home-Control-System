@@ -2,13 +2,14 @@
 #include "Server.h"
 #include <algorithm>
 #include "../utilities/CommandParser.h"
+#include "../devices/DeviceManager.h"
 
 namespace seneca {
 
     // store the socket, id, and a reference to the client list
     // each client gets their own handler when they connect
-    ClientHandler::ClientHandler(socket_t socket, int id, std::vector<socket_t>& clients)
-        : client_socket(socket), client_id(id), clients(clients) {}
+    ClientHandler::ClientHandler(socket_t socket, int id, std::vector<socket_t>& clients, std::mutex& clients_mutex, DeviceManager& deviceManager)
+        : client_socket(socket), client_id(id), clients(clients), clients_mutex(clients_mutex), deviceManager(deviceManager) {}
 
     // keeps listening for data from the client until they disconnect
     // recv() blocks until data arrives, so this loop just waits and processes one command at a time
@@ -35,9 +36,7 @@ namespace seneca {
             std::string device, action;
             if (parseCommand(raw, device, action)) {
                 std::cout << "Client " << client_id << " -> device: " << device << ", action: " << action << std::endl;
-                // todo: hook into sam's device manager here
-                // something like: deviceManager.handleCommand(device, action);
-                std::string response = "OK: " + device + " -> " + action + "\n";
+                std::string response = deviceManager.handleCommand(device, action) + "\n";
                 send(client_socket, response.c_str(), response.size(), 0);
             } else {
                 std::string response = "ERROR: invalid command format. Use GET /device/action\n";
@@ -50,6 +49,7 @@ namespace seneca {
     // remove this client from the tracking list and close their socket
     // called automatically when the client disconnects or an error occurs in run()
     void ClientHandler::disconnect() {
+        std::lock_guard<std::mutex> lock(clients_mutex);
         clients.erase(std::remove(clients.begin(), clients.end(), client_socket), clients.end());
         close_socket(client_socket);
         std::cout << "Client " << client_id << " disconnected. Active clients: " << clients.size() << std::endl;
@@ -101,13 +101,17 @@ namespace seneca {
                 continue;
             }
             client_id++;
-            clients.push_back(client);
-            std::cout << "Client " << client_id << " connected. Active clients: " << clients.size() << std::endl;
-            // each client runs in their own thread so multiple clients can be handled at the same time
-            std::thread([client, client_id, &clients = clients]() {
-                ClientHandler handler(client, client_id, clients);
+            {
+                std::lock_guard<std::mutex> lock(clients_mutex);
+                clients.push_back(client);
+                std::cout << "Client " << client_id << " connected. Active clients: "
+                    << clients.size() << std::endl;
+            }
+
+            std::thread([this, client, client_id]() {
+                ClientHandler handler(client, client_id, clients, clients_mutex, deviceManager);
                 handler.run();
-            }).detach();
+                }).detach();
         }
     }
 
