@@ -36,8 +36,6 @@ namespace seneca {
             std::string device, action;
             if (parseCommand(raw, device, action)) {
                 std::cout << "Client " << client_id << " -> device: " << device << ", action: " << action << std::endl;
-                // todo: hook into sam's device manager here
-                // something like: deviceManager.handleCommand(device, action);
                 std::string response = deviceManager.handleCommand(device, action) + "\n";
                 send(client_socket, response.c_str(), response.size(), 0);
             } else {

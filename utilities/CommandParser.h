@@ -10,8 +10,8 @@ namespace seneca {
 
     // takes a raw command string and splits it into device and action
     // returns true if the command is valid, false otherwise
-    // e.g. "GET /light/on"         -> device="light",      action="on"
-    //      "GET /thermostat/set/22" -> device="thermostat", action="set/22"
+    // "GET /light/on" -> device="light", action="on"
+    // "GET /thermostat/set/22" -> device="thermostat", action="set/22"
     inline bool parseCommand(const std::string& raw, std::string& device, std::string& action) {
         // make sure it starts with GET
         if (raw.substr(0, 4) != "GET ")
