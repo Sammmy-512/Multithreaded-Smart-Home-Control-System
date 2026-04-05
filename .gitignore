@@ -1,3 +1,9 @@
+
 .vs/
 build/
 *.exe
+=======
+.vscode
+demos/network_routing_demo
+demos/network_routing_demo.exe
+
