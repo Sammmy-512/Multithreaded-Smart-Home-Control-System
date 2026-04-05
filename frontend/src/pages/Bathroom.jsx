@@ -59,22 +59,22 @@ const Bathroom = () => {
         <main className="pt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* Thermostat Control */}
-          <ThermostatControl />
+          <ThermostatControl roomId="bathroom"/>
 
           {/* Security Control */}
-          <SecurityControl />
+          <SecurityControl roomId="bathroom"/>
 
           {/* Light Control */}
           <LightControl roomId="bathroom" />
 
           {/* Shower */}
-          <ShowerControl />
+          <ShowerControl roomId="bathroom"/>
 
           {/* Mirror */}
-          <MirrorControl />
+          <MirrorControl roomId="bathroom"/>
 
           {/* Exhaust Fan */}
-          <ExhaustFanControl />
+          <ExhaustFanControl roomId="bathroom"/>
 
           {/* System Terminal */}
           <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 md:col-span-3 text-white">

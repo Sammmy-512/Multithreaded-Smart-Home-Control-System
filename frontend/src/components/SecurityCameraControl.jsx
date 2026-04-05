@@ -1,3 +1,4 @@
+// src/components/SecurityCameraControl.jsx
 import React, { useState, useEffect } from 'react';
 import DeviceCard from './DeviceCard';
 import api from '../utils/api';
@@ -7,13 +8,17 @@ const SecurityCameraControl = ({ roomId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Turn camera on/off
   const toggleCamera = async (action) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.controlCamera({ roomId, action });
-      if (response.success) setStatus(action === 'on' ? 'online' : 'offline');
-      else setError(response.error || 'Command failed');
+      const response = await api.controlCamera(action, roomId);
+      if (response.success) {
+        setStatus(action === 'on' ? 'online' : 'offline');
+      } else {
+        setError(response.error || 'Command failed');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -21,13 +26,24 @@ const SecurityCameraControl = ({ roomId }) => {
     }
   };
 
+  // Fetch current camera status
   useEffect(() => {
     const fetchStatus = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const response = await api.getCameraStatus({ roomId });
-        if (response.success) setStatus(response.status.toLowerCase());
+        const response = await api.getCameraStatus(roomId);
+        if (response.success) {
+          setStatus(response.status?.toLowerCase() === 'online' ? 'online' : 'offline');
+        } else {
+          setStatus('offline');
+        }
       } catch (err) {
         console.error('Failed to fetch camera status:', err);
+        setError(err.message);
+        setStatus('offline');
+      } finally {
+        setLoading(false);
       }
     };
     fetchStatus();
@@ -35,7 +51,7 @@ const SecurityCameraControl = ({ roomId }) => {
 
   return (
     <DeviceCard
-      title="Security Camera"
+      title={`Security Camera - ${roomId}`}
       status={status}
       loading={loading}
       error={error}
@@ -53,6 +69,10 @@ const SecurityCameraControl = ({ roomId }) => {
         >
           {status === 'online' ? 'Turn Off Camera' : 'Turn On Camera'}
         </button>
+
+        <div className="text-sm text-white text-center">
+          Camera is currently <span className="font-semibold">{status.toUpperCase()}</span>
+        </div>
       </div>
     </DeviceCard>
   );

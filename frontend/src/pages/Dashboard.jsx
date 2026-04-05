@@ -60,17 +60,17 @@ const Dashboard = () => {
         <main className="pt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
         
           {/* Thermostat Control */}
-          <ThermostatControl />
+          <ThermostatControl roomId="livingRoom"/>
 
           {/* Security Control */}
-          <SecurityControl />
+          <SecurityControl roomId="livingRoom"/>
 
           {/* Light Control */}
           <LightControl roomId="livingRoom" />
 
-          <BlindsCurtainControl />
+          <BlindsCurtainControl roomId="livingRoom"/>
 
-          <SecurityCameraControl />
+          <SecurityCameraControl roomId="livingRoom"/>
 
           {/* <TVControl /> */}
 

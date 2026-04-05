@@ -8,13 +8,17 @@ const LightControl = ({ roomId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Toggle light on/off
   const toggleLight = async (action) => {
     setLoading(true);
     setError(null);
     try {
       const response = await api.controlLight(action, roomId);
-      if (response.success) setStatus(action);
-      else setError(response.error || 'Command failed');
+      if (response.success) {
+        setStatus(action);
+      } else {
+        setError(response.error || 'Command failed');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -22,19 +26,26 @@ const LightControl = ({ roomId }) => {
     }
   };
 
+  // Fetch initial status for the room
   useEffect(() => {
     const fetchStatus = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await api.getLightStatus(roomId);
         if (response.success) {
-          const msg = response.message.toLowerCase();
+          const msg = response.message?.toLowerCase() || '';
           if (msg.includes('on')) setStatus('on');
           else if (msg.includes('off')) setStatus('off');
           else setStatus('unknown');
+        } else {
+          setStatus('unknown');
         }
       } catch (err) {
         console.error('Failed to fetch light status:', err);
         setStatus('unknown');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -43,7 +54,7 @@ const LightControl = ({ roomId }) => {
 
   return (
     <DeviceCard
-      title="Light"
+      title={`Light - ${roomId}`}
       status={status}
       loading={loading}
       error={error}

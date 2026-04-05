@@ -58,19 +58,19 @@ const Garage = () => {
         <main className="pt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* Thermostat Control */}
-          <ThermostatControl />
+          <ThermostatControl roomId="garage"/>
 
           {/* Security Control */}
-          <SecurityControl />
+          <SecurityControl roomId="garage"/>
 
           {/* Light Control */}
           <LightControl roomId="garage" />
 
           {/* Garage Door */}
-          <GarageDoorOpener />
+          <GarageDoorOpener roomId="garage"/>
 
           {/* Security Camera */}
-          <SecurityCameraControl />
+          <SecurityCameraControl roomId="garage"/>
 
           {/* System Terminal */}
           <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 md:col-span-3 text-white">

@@ -1,19 +1,20 @@
 // src/components/SecurityControl.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DeviceCard from './DeviceCard';
 import api from '../utils/api';
 
-const SecurityControl = () => {
+const SecurityControl = ({ roomId }) => {
   const [status, setStatus] = useState('unknown');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Control the security system (arm/disarm)
   const controlSecurity = async (action) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.controlSecurity(action);
+      const response = await api.controlSecurity(action, roomId);
       if (response.success) {
         if (action === 'arm') setStatus('armed');
         else if (action === 'disarm') setStatus('disarmed');
@@ -27,6 +28,25 @@ const SecurityControl = () => {
     }
   };
 
+  // Fetch current status on mount or when roomId changes
+  useEffect(() => {
+    const fetchStatus = async () => {
+      setLoading(true);
+      try {
+        const response = await api.getSecurityStatus(roomId);
+        if (response.success) {
+          setStatus(response.status?.toLowerCase() === 'armed' ? 'armed' : 'disarmed');
+        }
+      } catch (err) {
+        console.error('Failed to fetch security status:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStatus();
+  }, [roomId]);
+
   const getStatusMessage = () => {
     if (status === 'armed') return 'Your home is protected';
     if (status === 'disarmed') return 'Security system is off';
@@ -35,7 +55,7 @@ const SecurityControl = () => {
 
   return (
     <DeviceCard
-      title="Security System"
+      title={`Security System`}
       status={status}
       loading={loading}
       error={error}

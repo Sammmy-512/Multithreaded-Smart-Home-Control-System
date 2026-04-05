@@ -58,19 +58,19 @@ const Room2 = () => {
         <main className="pt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Thermostat Control */}
-          <ThermostatControl />
+          <ThermostatControl roomId="room2"/>
 
           {/* Security Control */}
-          <SecurityControl />
+          <SecurityControl roomId="room2"/>
           
           {/* Light Control */}
-          <LightControl roomId="room2" />
+          <LightControl roomId="room2"/>
 
           {/*  Speaker */}
-          <Speaker />
+          <Speaker roomId="room2"/>
 
           {/* Blinds & Curtains */}
-          <BlindsCurtainControl />
+          <BlindsCurtainControl roomId="room2"/>
           
           {/* System Terminal */}
           <div className="bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg p-5 md:col-span-3 text-white">
