@@ -10,6 +10,8 @@
 #include <mutex>
 #include "../devices/DeviceManager.h"
 #include "../utilities/SocketUtils.h"
+#include "../utilities/RoutingTable.h"
+#include "../utilities/ArpTable.h"
 
 namespace seneca {
 
@@ -19,12 +21,14 @@ namespace seneca {
         std::vector<socket_t>& clients;
         std::mutex& clients_mutex;
         DeviceManager& deviceManager;
+        RoutingTable& routingTable;
+        ArpTable& arpTable;
     public:
         ClientHandler(socket_t socket, int id, std::vector<socket_t>& clients,
-            std::mutex& clients_mutex, DeviceManager& deviceManager);
+            std::mutex& clients_mutex, DeviceManager& deviceManager,
+            RoutingTable& routingTable, ArpTable& arpTable);
         void run();
         void disconnect();
-        
     };
 
     class TCPServer {
@@ -32,6 +36,8 @@ namespace seneca {
         std::vector<socket_t> clients;
         std::mutex clients_mutex;
         DeviceManager deviceManager;
+        RoutingTable routingTable;
+        ArpTable arpTable;
     public:
         TCPServer();
         ~TCPServer();
