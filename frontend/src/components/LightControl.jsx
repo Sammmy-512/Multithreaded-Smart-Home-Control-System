@@ -27,30 +27,57 @@ const LightControl = ({ roomId }) => {
   };
 
   // Fetch initial status for the room
+  // useEffect(() => {
+  //   const fetchStatus = async () => {
+  //     setLoading(true);
+  //     setError(null);
+  //     try {
+  //       const response = await api.getLightStatus(roomId);
+  //       if (response.success) {
+  //         const msg = response.message?.toLowerCase() || '';
+  //         if (msg.includes('on')) setStatus('on');
+  //         else if (msg.includes('off')) setStatus('off');
+  //         else setStatus('unknown');
+  //       } else {
+  //         setStatus('unknown');
+  //       }
+  //     } catch (err) {
+  //       console.error('Failed to fetch light status:', err);
+  //       setStatus('unknown');
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchStatus();
+  // }, [roomId]);
   useEffect(() => {
-    const fetchStatus = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await api.getLightStatus(roomId);
-        if (response.success) {
-          const msg = response.message?.toLowerCase() || '';
-          if (msg.includes('on')) setStatus('on');
-          else if (msg.includes('off')) setStatus('off');
-          else setStatus('unknown');
+  const fetchStatus = async () => {
+    try {
+      const response = await api.getLightStatus(roomId);
+
+      if (response.success) {
+        const msg = response.message?.toLowerCase() || '';
+
+        if (msg.includes('on')) {
+          setStatus('on');
+        } else if (msg.includes('off')) {
+          setStatus('off');
         } else {
           setStatus('unknown');
         }
-      } catch (err) {
-        console.error('Failed to fetch light status:', err);
-        setStatus('unknown');
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Failed to fetch light status:', err);
+    }
+  };
 
-    fetchStatus();
-  }, [roomId]);
+  fetchStatus();
+
+  const interval = setInterval(fetchStatus, 1000);
+
+  return () => clearInterval(interval);
+}, [roomId]);
 
   return (
     <DeviceCard

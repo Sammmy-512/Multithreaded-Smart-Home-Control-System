@@ -29,6 +29,10 @@ namespace seneca {
         // split the path into device and action at the slash
         device = path.substr(0, slash);
         action = path.substr(slash + 1);
+	size_t queryPos = action.find('?');
+if (queryPos != std::string::npos) {
+    action = action.substr(0, queryPos);
+}
         return true;
     }
 
